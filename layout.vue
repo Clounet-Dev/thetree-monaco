@@ -2,6 +2,11 @@
   <section class="monaco-editor-shell" :class="{ 'theseed-dark-mode': theme === 'vs-dark', 'is-expanded': isExpanded }">
     <div class="format-toolbar" role="toolbar" :aria-label="editorText('toolbar')">
       <div class="toolbar-group">
+        <GeneralButton class="toolbar-button" type="event" :title="editorText('undo')" @click="editor?.trigger('toolbar', 'undo')"><font-awesome-icon :icon="icons.undo"/></GeneralButton>
+        <GeneralButton class="toolbar-button" type="event" :title="editorText('redo')" @click="editor?.trigger('toolbar', 'redo')"><font-awesome-icon :icon="icons.redo"/></GeneralButton>
+        <div class="toolbar-divider"/>
+        <GeneralButton class="toolbar-button" type="event" :title="editorText('findReplace')" @click="editor?.trigger('toolbar', 'actions.findWithSelection')"><font-awesome-icon :icon="icons.search"/></GeneralButton>
+        <div class="toolbar-divider"/>
         <ContextMenu ref="colorMenu" :title="editorText('fontSize')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
           <GeneralButton class="toolbar-button" type="event" :title="editorText('fontSize')"><font-awesome-icon :icon="icons.fontSize"/><font-awesome-icon class="toolbar-caret" :icon="icons.caretDown"/></GeneralButton>
             <template #menu><div><GeneralButton v-for="item in fontSizes" :key="item.value" type="event" class="font-size-option" @click="applyFormat('size', item.value)"><span>{{editorText(item.key)}}</span><span class="font-size-preview" :class="`font-size-preview--${item.value.replace('-', 'minus')}`">Aa</span></GeneralButton></div></template>
@@ -17,6 +22,18 @@
               <div class="insert-actions"><GeneralButton submit type="event" @click="insertColor">{{editorText('insert')}}</GeneralButton></div>
             </div>
           </template>
+        </ContextMenu>
+        <ContextMenu :title="editorText('alignment')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
+          <GeneralButton class="toolbar-button" type="event" :title="editorText('alignment')"><font-awesome-icon :icon="icons.align"/></GeneralButton>
+          <template #menu><div class="vertical-menu"><GeneralButton v-for="item in alignments" :key="item.value" type="event" @click="insertWikiBlock('style', item.value)">{{editorText(item.key)}}</GeneralButton></div></template>
+        </ContextMenu>
+        <ContextMenu :title="editorText('folding')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
+          <GeneralButton class="toolbar-button" type="event" :title="editorText('folding')"><font-awesome-icon :icon="icons.fold"/></GeneralButton>
+          <template #menu><div class="vertical-menu"><GeneralButton type="event" @click="insertWikiBlock('folding')">{{editorText('foldingInsert')}}</GeneralButton><GeneralButton type="event" @click="insertHorizontalRule">{{editorText('horizontalRule')}}</GeneralButton></div></template>
+        </ContextMenu>
+        <ContextMenu :title="editorText('table')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
+          <GeneralButton class="toolbar-button" type="event" :title="editorText('table')"><font-awesome-icon :icon="icons.table"/></GeneralButton>
+          <template #menu><div class="table-menu"><label>{{editorText('tableRows')}}<InputField v-model="table.rows" type="number" min="1" max="20"/></label><label>{{editorText('tableColumns')}}<InputField v-model="table.columns" type="number" min="1" max="12"/></label><div class="table-actions"><GeneralButton type="event" @click="addTableRow">{{editorText('addTableRow')}}</GeneralButton><GeneralButton type="event" @click="addTableColumn">{{editorText('addTableColumn')}}</GeneralButton></div><div class="insert-actions"><GeneralButton submit type="event" @click="insertTable">{{editorText('insert')}}</GeneralButton></div></div></template>
         </ContextMenu>
         <div class="toolbar-divider"/>
         <GeneralButton class="toolbar-button" type="event" :title="editorText('bold')" @click="applyFormat('bold')"><font-awesome-icon :icon="icons.bold"/></GeneralButton>
@@ -39,14 +56,31 @@
         <GeneralButton class="toolbar-button" type="event" :title="editorText('comment')" @click.stop="applyLinePrefix('## ')"><font-awesome-icon :icon="icons.hashtag"/></GeneralButton>
         <ContextMenu :title="editorText('macro')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
           <GeneralButton class="toolbar-button" type="event" :title="editorText('macro')"><font-awesome-icon :icon="icons.macro"/></GeneralButton>
-          <template #menu><div class="macro-menu"><label for="editor-macro">{{editorText('content')}}</label><SelectMenu id="editor-macro" v-model="macro.type"><option v-for="item in macroTypes" :key="item.value" :value="item.value">{{editorText(item.key)}}</option></SelectMenu><br><InputField v-model="macro.value" type="text"/><div class="insert-actions"><GeneralButton submit type="event" @click="insertMacro">{{editorText('insert')}}</GeneralButton></div></div></template>
+          <template #menu>
+            <div class="macro-menu">
+              <label for="editor-macro-type">{{editorText('macroType')}}</label>
+              <SelectMenu id="editor-macro-type" v-model="macro.type"><option v-for="item in macroTypes" :key="item.value" :value="item.value">{{editorText(item.key)}}</option></SelectMenu>
+              <InputField v-model="macro.value" type="text" :placeholder="editorText('Search') || '검색'"/>
+              <div class="insert-actions"><GeneralButton submit type="event" @click="insertMacro">{{editorText('insert')}}</GeneralButton></div>
+            </div>
+          </template>
         </ContextMenu>
         <ContextMenu :title="editorText('syntaxHighlight')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
           <GeneralButton class="toolbar-button" type="event" :title="editorText('syntaxHighlight')"><font-awesome-icon :icon="icons.code"/></GeneralButton>
-          <template #menu><div><label for="editor-language">{{editorText('language')}}</label><SelectMenu id="editor-language" v-model="language"><option value="">{{editorText('syntaxHighlight')}}</option><option v-for="item in languages" :key="item.value" :value="item.value">{{item.label}}</option></SelectMenu><div class="insert-actions"><GeneralButton submit type="event" @click="insertCodeBlock">{{editorText('insert')}}</GeneralButton></div></div></template>
+          <template #menu>
+            <div class="language-menu">
+              <label for="editor-language">{{editorText('language')}}</label>
+              <SelectMenu id="editor-language" v-model="language">
+                <option value="">{{editorText('syntaxLanguage')}}</option>
+                <option v-for="item in filteredLanguages" :key="item.value" :value="item.value">{{item.value}} / {{item.label}}</option>
+              </SelectMenu>
+              <InputField v-model="languageSearch" type="text" :placeholder="editorText('Search') || '검색'" />
+              <div class="insert-actions"><GeneralButton submit type="event" @click="insertCodeBlock">{{editorText('insert')}}</GeneralButton></div>
+            </div>
+          </template>
         </ContextMenu>
+        <div class="toolbar-divider"/>
       </div>
-      <div class="toolbar-divider"/>
       <div class="toolbar-group">
         <ContextMenu :title="editorText('link')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
           <GeneralButton class="toolbar-button" type="event" :title="editorText('link')"><font-awesome-icon :icon="icons.link"/></GeneralButton>
@@ -125,22 +159,28 @@
           <GeneralButton type="event" @click="loadDraft"><font-awesome-icon :icon="icons.load"/><span>{{editorText('loadDraft')}}</span></GeneralButton>
           <GeneralButton type="event" @click="copyDocumentTitle"><font-awesome-icon :icon="icons.copy"/><span>{{editorText('copyTitle')}}</span></GeneralButton>
           <GeneralButton type="event" @click="copyRaw"><font-awesome-icon :icon="icons.copy"/><span>{{editorText('copyRaw')}}</span></GeneralButton>
+          <GeneralButton type="event" @click="clearFormatting"><font-awesome-icon :icon="icons.close"/><span>{{editorText('clearFormatting')}}</span></GeneralButton>
+          <GeneralButton type="event" @click="showDraftList"><font-awesome-icon :icon="icons.load"/><span>{{editorText('draftHistory')}}</span></GeneralButton>
         </div></template>
       </ContextMenu>
-      <GeneralButton class="toolbar-button" type="event" :title="editorText(isExpanded ? 'collapse' : 'expand')" :aria-pressed="isExpanded" @click="toggleExpanded"><font-awesome-icon :icon="isExpanded ? icons.contract : icons.expand"/></GeneralButton>
-      <div class="toolbar-divider"/>
-      <GeneralButton class="toolbar-button toolbar-label" type="event" :title="editorText('compare')" :aria-pressed="compareMode" @click="toggleCompare"><font-awesome-icon :icon="icons.compare"/><span>{{editorText('compare')}}</span></GeneralButton>
     </div>
 
     <div v-show="!compareMode" ref="div" class="editor-surface"/>
     <div v-show="compareMode" ref="compareDiv" class="editor-surface compare-surface"/>
     <footer class="editor-statusbar">
-      <div class="toolbar-divider"/>
-      <span>{{editorText('lineColumn', cursorPosition)}}</span>
-      <div class="toolbar-divider"/>
-      <span>{{editorText('characterCount', { count: characterCount })}} <span class="muted">({{characterCountNoSpaces}})</span></span>
-      <div class="toolbar-divider"/>
-      <span>{{editorText('lineCount', { count: lineCount })}}</span>
+      <div class="statusbar-actions">
+        <GeneralButton class="toolbar-button" type="event" :title="editorText(isExpanded ? 'collapse' : 'expand')" :aria-pressed="isExpanded" @click="toggleExpanded"><font-awesome-icon :icon="isExpanded ? icons.contract : icons.expand"/></GeneralButton>
+        <div class="toolbar-divider"/>
+        <GeneralButton class="toolbar-button toolbar-label" type="event" :title="editorText('compare')" :aria-pressed="compareMode" @click="toggleCompare"><font-awesome-icon :icon="icons.compare"/><span>{{editorText('compare')}}</span></GeneralButton>
+      </div>
+      <div class="statusbar-info">
+        <div class="toolbar-divider"/>
+        <span>{{editorText('lineColumn', cursorPosition)}}</span>
+        <div class="toolbar-divider"/>
+        <span>{{editorText('characterCount', { count: characterCount })}} <span class="muted" :title="editorText('characterCountNoSpaces')">({{characterCountNoSpaces}})</span></span>
+        <div class="toolbar-divider"/>
+        <span>{{editorText('lineCount', { count: lineCount })}}</span>
+      </div>
     </footer>
 
   </section>
@@ -156,6 +196,7 @@ import CheckBox from '@/components/form/checkBox'
 import { toast } from 'vue-sonner'
 import {
   faBold,
+  faAlignCenter,
   faCaretDown,
   faCode,
   faCopy,
@@ -170,6 +211,7 @@ import {
   faLink,
   faList,
   faListOl,
+  faMagnifyingGlass,
   faNoteSticky,
   faPalette,
   faPuzzlePiece,
@@ -178,10 +220,14 @@ import {
   faSubscript,
   faSuperscript,
   faTableColumns,
+  faTable,
   faTextHeight,
   faToolbox,
   faUnderline,
+  faUndo,
   faVideo,
+  faRedo,
+  faAnglesDown,
   faXmark
 } from '@fortawesome/free-solid-svg-icons'
 import { default as namumarkRegister } from './namu/vs/languages/namumark'
@@ -219,6 +265,7 @@ export default {
   data() {
     return {
       icons: {
+        align: faAlignCenter,
         bold: faBold,
         caretDown: faCaretDown,
         code: faCode,
@@ -236,6 +283,11 @@ export default {
         link: faLink,
         list: faList,
         listNumbers: faListOl,
+        search: faMagnifyingGlass,
+        table: faTable,
+        undo: faUndo,
+        redo: faRedo,
+        fold: faAnglesDown,
         macro: faPuzzlePiece,
         note: faNoteSticky,
         palette: faPalette,
@@ -250,6 +302,8 @@ export default {
       },
       editor: null,
       monaco: null,
+      autoSaveTimer: null,
+      completionProvider: null,
       quickaccess: null,
       originalContent: '',
       isExpanded: false,
@@ -265,6 +319,13 @@ export default {
       color: '#000000',
       darkColor: '#ffffff',
       darkColorEnabled: false,
+      table: { rows: 2, columns: 2 },
+      alignments: [
+        { value: 'left', key: 'alignLeft' },
+        { value: 'center', key: 'alignCenter' },
+        { value: 'right', key: 'alignRight' },
+        { value: 'justify', key: 'alignJustify' }
+      ],
       link: {
         target: '',
         content: '',
@@ -303,6 +364,7 @@ export default {
         heightEnabled: false
       },
       language: '',
+      languageSearch: '',
       macro: {
         type: 'include',
         value: ''
@@ -346,6 +408,7 @@ export default {
       characterCount: 0,
       characterCountNoSpaces: 0,
       lineCount: 1,
+      draftHistory: [],
       cursorPosition: {
         line: 1,
         column: 1
@@ -355,6 +418,11 @@ export default {
   computed: {
     theme() {
       return this.$store.state.currentTheme === 'dark' ? 'vs-dark' : 'vs'
+    },
+    filteredLanguages() {
+      if (!this.languageSearch) return this.languages
+      const q = this.languageSearch.toLowerCase()
+      return this.languages.filter(item => item.value.toLowerCase().includes(q) || item.label.toLowerCase().includes(q))
     }
   },
   watch: {
@@ -364,9 +432,22 @@ export default {
   },
   async mounted() {
     window.addEventListener('keydown', this.handleKeydown)
+    this.autoSaveTimer = window.setInterval(() => this.autoSaveDraft(), 30000)
     const monaco = await import('monaco-editor')
 
     namumarkRegister(monaco)
+    this.completionProvider = monaco.languages.registerCompletionItemProvider('namumark', {
+      triggerCharacters: ['[', ':'],
+      provideCompletionItems: (model, position) => {
+        const line = model.getLineContent(position.lineNumber).slice(0, position.column - 1)
+        if(!line.includes('[[')) return { suggestions: [] }
+        const range = new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column)
+        return { suggestions: [
+          { label: '문서 링크', kind: monaco.languages.CompletionItemKind.Reference, insertText: '문서명]]', range, detail: '[[문서명]]' },
+          { label: '파일 링크', kind: monaco.languages.CompletionItemKind.File, insertText: ':파일:파일명]]', range, detail: '[[:파일:파일명]]' }
+        ] }
+      }
+    })
 
     self.MonacoEnvironment = {
       getWorker(_, label) {
@@ -391,11 +472,15 @@ export default {
 
     this.quickaccess = new QuickAccess(this.editor, this.monaco)
     this.editor.onDidChangeModelContent(() => this.updateStatus())
+    this.editor.onDidChangeModelContent(() => this.validateSyntax())
     this.editor.onDidChangeCursorPosition(() => this.updateStatus())
     this.updateStatus()
+    this.validateSyntax()
   },
   beforeUnmount() {
     window.removeEventListener('keydown', this.handleKeydown)
+    window.clearInterval(this.autoSaveTimer)
+    this.completionProvider?.dispose()
   },
   methods: {
     currentLanguage() {
@@ -423,6 +508,9 @@ export default {
       } else if(event.ctrlKey && event.key.toLowerCase() === 'o') {
         event.preventDefault()
         this.loadDraft()
+      } else if(event.ctrlKey && event.key.toLowerCase() === 'f') {
+        event.preventDefault()
+        this.editor?.trigger('keyboard', 'actions.findWithSelection')
       } else if(event.key === 'F11') {
         event.preventDefault()
         this.toggleExpanded()
@@ -491,6 +579,59 @@ export default {
     insertColor() {
       this.applyFormat('color', { color: this.color, darkColor: this.darkColorEnabled ? this.darkColor : null })
       hideAllPoppers()
+    },
+    insertWikiBlock(type, value = '') {
+      const selected = this.getSelectedText()
+      const content = selected || ''
+      const opening = type === 'folding'
+        ? '{{{#!folding [ 펼치기 · 접기 ]\n'
+        : `{{{#!wiki style="text-align: ${value}"\n`
+      const text = `${opening}${content}\n}}}`
+      this.replaceSelection(text, opening.length + content.length + (content ? 1 : 0))
+      hideAllPoppers()
+    },
+    insertHorizontalRule() {
+      this.replaceSelection('----\n')
+      hideAllPoppers()
+    },
+    insertTable() {
+      const rows = Math.max(1, Math.min(20, Number(this.table.rows) || 2))
+      const columns = Math.max(1, Math.min(12, Number(this.table.columns) || 2))
+      this.replaceSelection(Array.from({ length: rows }, () => `|| ${Array.from({ length: columns }, () => ' ').join(' || ')} ||`).join('\n'))
+      hideAllPoppers()
+    },
+    addTableRow() {
+      this.replaceSelection(`|| ${Array.from({ length: Math.max(1, Number(this.table.columns) || 2) }, () => ' ').join(' || ')} ||\n`, true)
+    },
+    addTableColumn() {
+      const selection = this.editor.getSelection()
+      const model = this.editor.getModel()
+      const text = model.getValueInRange(selection)
+      const updated = text.split('\n').map(line => line.trimEnd().endsWith('||') ? `${line.trimEnd().slice(0, -2)} ||  ||` : `${line} ||`)
+      this.editor.executeEdits('table', [{ range: selection, text: updated.join('\n') }])
+    },
+    getSelectedText() {
+      const selection = this.editor.getSelection()
+      return this.editor.getModel().getValueInRange(selection)
+    },
+    replaceSelection(text, cursorOffset = null) {
+      const selection = this.editor.getSelection()
+      const start = selection.getStartPosition()
+      this.editor.executeEdits('toolbar', [{ range: selection, text }])
+      if(cursorOffset !== null) {
+        const position = this.editor.getModel().getPositionAt(this.editor.getModel().getOffsetAt(start) + cursorOffset)
+        this.editor.setPosition(position)
+      }
+      this.editor.focus()
+    },
+    clearFormatting() {
+      const selection = this.editor.getSelection()
+      const text = this.getSelectedText()
+      const plain = text
+        .replace(/('{2,3}|~~|__|,,|\^\^|\{\{\{|\}\}\})/g, '')
+        .replace(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, '$2')
+        .replace(/\[\*\s*([^\]]+)\]/g, '$1')
+      this.editor.executeEdits('clear-formatting', [{ range: selection, text: plain }])
     },
     insertCodeBlock() {
       const selection = this.editor.getSelection()
@@ -592,7 +733,6 @@ export default {
           return
         }
       } catch {
-        // Use the legacy fallback when clipboard permissions reject the modern API.
       }
       const textarea = document.createElement('textarea')
       textarea.value = value
@@ -610,8 +750,34 @@ export default {
       })
     },
     saveDraft() {
-      localStorage.setItem(this.getDraftKey(), this.editor.getValue())
+      const value = this.editor.getValue()
+      const history = this.getDraftHistory()
+      history.unshift({ time: Date.now(), value })
+      localStorage.setItem(this.getDraftKey(), value)
+      localStorage.setItem(`${this.getDraftKey()}:history`, JSON.stringify(history.slice(0, 10)))
       this.showToast(this.editorText('draftSaved'))
+      hideAllPoppers()
+    },
+    autoSaveDraft() {
+      if(!this.editor || !this.editor.getValue()) return
+      localStorage.setItem(`${this.getDraftKey()}:autosave`, this.editor.getValue())
+    },
+    getDraftHistory() {
+      try {
+        return JSON.parse(localStorage.getItem(`${this.getDraftKey()}:history`) || '[]')
+      } catch {
+        return []
+      }
+    },
+    showDraftList() {
+      const history = this.getDraftHistory()
+      if(!history.length) {
+        this.showToast(this.editorText('noDraft'))
+        return
+      }
+      const selected = window.prompt(this.editorText('draftSelect'), history.map((item, index) => `${index + 1}. ${new Date(item.time).toLocaleString(this.currentLocale())}`).join('\n'))
+      const index = Number(selected) - 1
+      if(Number.isInteger(index) && history[index]) this.setValue(history[index].value)
       hideAllPoppers()
     },
     loadDraft() {
@@ -710,6 +876,23 @@ export default {
         line: position.lineNumber,
         column: position.column
       }
+    },
+    validateSyntax() {
+      if(!this.editor || !this.monaco) return
+      const model = this.editor.getModel()
+      const text = model.getValue()
+      const markers = []
+      if((text.match(/\{\{\{/g) || []).length !== (text.match(/\}\}\}/g) || []).length) {
+        markers.push({
+          severity: this.monaco.MarkerSeverity.Warning,
+          message: this.editorText('syntaxUnbalanced'),
+          startLineNumber: 1,
+          startColumn: 1,
+          endLineNumber: model.getLineCount(),
+          endColumn: model.getLineMaxColumn(model.getLineCount())
+        })
+      }
+      this.monaco.editor.setModelMarkers(model, 'namumark', markers)
     }
   }
 }
@@ -744,7 +927,7 @@ section {
   z-index: 2;
 }
 
-.toolbar-group { align-items: center; display: flex; gap: .1rem; }
+.toolbar-group { align-items: center; display: flex; }
 .toolbar-button {
   border: 0;
   background: transparent !important;
@@ -752,7 +935,7 @@ section {
   border-radius: 4px;
   color: inherit;
   display: inline-flex;
-  gap: .35rem;
+  gap: 0;
   height: 1.95rem;
   justify-content: center;
   min-width: 2rem;
@@ -761,10 +944,10 @@ section {
 .toolbar-button:hover {
   background: var(--light-hover-background-color, var(--hover-background-color, #f0f0f0)) !important;
 }
-.toolbar-button svg { height: .95rem; width: .95rem; }
+.toolbar-button svg { height: .95rem; vertical-align: middle; width: .95rem; }
 .toolbar-label { padding: 0 .55rem; }
 .toolbar-icon { font-size: 1.05rem; line-height: 1; }
-.toolbar-caret { font-size: .7rem; }
+.toolbar-caret { font-size: .7rem; margin-left: .35rem; }
 .italic { font-style: italic; }
 .strike { text-decoration: line-through; }
 .toolbar-divider { background: #dfe1e2; height: 19.5838px; margin: 0 .35rem; width: 2px; }
@@ -778,8 +961,15 @@ section {
   --vscode-editorCodeLens-fontSize: 12px;
   --vscode-editorCodeLens-fontFeatureSettings: "liga" off, "calt" off;
 }
-.editor-statusbar { border-top: 1px solid #dfe1e2; color: var(--light-text-color, var(--text-color, #212529)); justify-content: flex-end; min-height: 1.8rem; font-size: .8rem; font-family: monospace; }
+.editor-statusbar { border-top: 1px solid #dfe1e2; color: var(--light-text-color, var(--text-color, #212529)); justify-content: space-between; min-height: 1.8rem; font-size: .8rem; font-family: monospace; }
 .editor-statusbar .toolbar-divider { height: 15px; margin: 0 .55rem; }
+.statusbar-actions,
+.statusbar-info { align-items: center; display: flex; min-width: 0; }
+.statusbar-actions { flex: 0 0 auto; }
+.statusbar-actions .toolbar-button { min-height: 1.8rem; gap: .5rem; font-family: initial; }
+.statusbar-actions .toolbar-divider { margin: 0 .35rem; }
+.statusbar-info { justify-content: flex-end; overflow: hidden; }
+.statusbar-info > span { white-space: nowrap; }
 .muted { color: #6c757d; }
 .is-expanded {
   height: 100vh;
@@ -973,6 +1163,57 @@ section {
   justify-content: flex-end;
   margin: .75rem 0 0;
 }
+:global(.editor-context-menu .vertical-menu) {
+  display: flex !important;
+  flex-direction: column;
+  min-width: 12rem;
+}
+:global(.editor-context-menu .vertical-menu > a) {
+  align-items: center;
+  align-self: stretch;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  font-weight: 400;
+  justify-content: flex-start !important;
+  text-align: left;
+  text-decoration: none !important;
+  width: 100%;
+}
+:global(.editor-context-menu .table-menu) {
+  display: flex !important;
+  flex-direction: column;
+  gap: .35rem;
+  min-width: 10rem;
+}
+:global(.editor-context-menu .table-menu > label) {
+  align-items: center;
+  display: flex;
+  gap: .35rem;
+  justify-content: space-between;
+}
+:global(.editor-context-menu .table-menu .table-actions) {
+  justify-content: flex-end;
+  display: flex;
+  gap: .35rem;
+  margin-top: .35rem;
+}
+:global(.editor-context-menu .table-menu .table-actions > button) {
+  flex: 1;
+  min-width: 0;
+}
+:global(.editor-context-menu .language-menu),
+:global(.editor-context-menu .macro-menu) {
+  display: flex !important;
+  flex-direction: column;
+  gap: .35rem;
+  min-width: 16rem;
+}
+:global(.editor-context-menu .language-menu .input),
+:global(.editor-context-menu .macro-menu .input) {
+  box-sizing: border-box;
+  width: 100%;
+}
 :global(.editor-context-menu .external-sites) {
   font-size: .85rem;
 }
@@ -1008,7 +1249,7 @@ section {
 @media (max-width: 640px) {
   .toolbar-label span:not(.toolbar-icon):not(.toolbar-caret) { display: none; }
   .format-toolbar { overflow-x: auto; }
-  .editor-statusbar { gap: .5rem; font-size: .72rem; }
+  .statusbar-info { overflow-x: auto; }
 }
 .theseed-dark-mode .toolbar-button:hover {
   background: var(--dark-hover-background-color, var(--hover-background-color, #2d2e2f)) !important;
