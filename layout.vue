@@ -2,11 +2,11 @@
   <section class="monaco-editor-shell" :class="{ 'theseed-dark-mode': theme === 'vs-dark', 'is-expanded': isExpanded }">
     <div class="format-toolbar" role="toolbar" :aria-label="editorText('toolbar')">
       <div class="toolbar-group">
-        <ContextMenu ref="colorMenu" :title="editorText('fontSize')" :popperClass="['editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
+        <ContextMenu ref="colorMenu" :title="editorText('fontSize')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
           <GeneralButton class="toolbar-button" type="event" :title="editorText('fontSize')"><font-awesome-icon :icon="icons.fontSize"/><font-awesome-icon class="toolbar-caret" :icon="icons.caretDown"/></GeneralButton>
             <template #menu><div><GeneralButton v-for="item in fontSizes" :key="item.value" type="event" class="font-size-option" @click="applyFormat('size', item.value)"><span>{{editorText(item.key)}}</span><span class="font-size-preview" :class="`font-size-preview--${item.value.replace('-', 'minus')}`">Aa</span></GeneralButton></div></template>
         </ContextMenu>
-        <ContextMenu :title="editorText('fontColor')" :popperClass="['editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
+        <ContextMenu :title="editorText('fontColor')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
           <GeneralButton class="toolbar-button" type="event" :title="editorText('fontColor')"><font-awesome-icon :icon="icons.palette"/></GeneralButton>
           <template #menu>
             <div class="color-menu">
@@ -28,7 +28,7 @@
       </div>
       <div class="toolbar-divider"/>
       <div class="toolbar-group">
-        <ContextMenu :title="editorText('heading')" :popperClass="['editor-context-menu', 'heading-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
+        <ContextMenu :title="editorText('heading')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', 'heading-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
           <GeneralButton class="toolbar-button" type="event" :title="editorText('heading')"><font-awesome-icon :icon="icons.heading"/><font-awesome-icon class="toolbar-caret" :icon="icons.caretDown"/></GeneralButton>
           <template #menu><div><GeneralButton v-for="level in 6" :key="level" type="event" class="heading-option" @click="applyHeading(level)"><span>{{editorText('headingLevel', { level })}}</span><span class="heading-preview">{{'='.repeat(level)}} {{editorText('headingLevel', { level })}} {{'='.repeat(level)}}</span></GeneralButton></div></template>
         </ContextMenu>
@@ -37,18 +37,18 @@
         <GeneralButton class="toolbar-button" type="event" :title="editorText('quote')" @click="applyLinePrefix('> ')"><font-awesome-icon :icon="icons.quote"/></GeneralButton>
         <GeneralButton class="toolbar-button" type="event" :title="editorText('footnote')" @click.stop="applyFormat('footnote')"><font-awesome-icon :icon="icons.note"/></GeneralButton>
         <GeneralButton class="toolbar-button" type="event" :title="editorText('comment')" @click.stop="applyLinePrefix('## ')"><font-awesome-icon :icon="icons.hashtag"/></GeneralButton>
-        <ContextMenu :title="editorText('macro')" :popperClass="['editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
+        <ContextMenu :title="editorText('macro')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
           <GeneralButton class="toolbar-button" type="event" :title="editorText('macro')"><font-awesome-icon :icon="icons.macro"/></GeneralButton>
           <template #menu><div class="macro-menu"><label for="editor-macro">{{editorText('content')}}</label><SelectMenu id="editor-macro" v-model="macro.type"><option v-for="item in macroTypes" :key="item.value" :value="item.value">{{editorText(item.key)}}</option></SelectMenu><br><InputField v-model="macro.value" type="text"/><div class="insert-actions"><GeneralButton submit type="event" @click="insertMacro">{{editorText('insert')}}</GeneralButton></div></div></template>
         </ContextMenu>
-        <ContextMenu :title="editorText('syntaxHighlight')" :popperClass="['editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
+        <ContextMenu :title="editorText('syntaxHighlight')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
           <GeneralButton class="toolbar-button" type="event" :title="editorText('syntaxHighlight')"><font-awesome-icon :icon="icons.code"/></GeneralButton>
           <template #menu><div><label for="editor-language">{{editorText('language')}}</label><SelectMenu id="editor-language" v-model="language"><option value="">{{editorText('syntaxHighlight')}}</option><option v-for="item in languages" :key="item.value" :value="item.value">{{item.label}}</option></SelectMenu><div class="insert-actions"><GeneralButton submit type="event" @click="insertCodeBlock">{{editorText('insert')}}</GeneralButton></div></div></template>
         </ContextMenu>
       </div>
       <div class="toolbar-divider"/>
       <div class="toolbar-group">
-        <ContextMenu :title="editorText('link')" :popperClass="['editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
+        <ContextMenu :title="editorText('link')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
           <GeneralButton class="toolbar-button" type="event" :title="editorText('link')"><font-awesome-icon :icon="icons.link"/></GeneralButton>
           <template #menu>
             <div class="insert-menu link-menu">
@@ -60,7 +60,7 @@
             </div>
           </template>
         </ContextMenu>
-        <ContextMenu :title="editorText('image')" :popperClass="['editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
+        <ContextMenu :title="editorText('image')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
           <GeneralButton class="toolbar-button" type="event" :title="editorText('image')"><font-awesome-icon :icon="icons.image"/></GeneralButton>
           <template #menu>
             <div class="insert-menu image-menu">
@@ -95,7 +95,7 @@
             </div>
           </template>
         </ContextMenu>
-        <ContextMenu :title="editorText('video')" :popperClass="['editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
+        <ContextMenu :title="editorText('video')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
           <GeneralButton class="toolbar-button" type="event" :title="editorText('video')"><font-awesome-icon :icon="icons.video"/></GeneralButton>
           <template #menu>
             <div class="insert-menu video-menu">
@@ -118,7 +118,7 @@
         <div class="toolbar-divider"/>
       </div>
       <div class="toolbar-spacer"/>
-      <ContextMenu :title="editorText('tools')" :popperClass="['editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
+      <ContextMenu :title="editorText('tools')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
         <GeneralButton class="toolbar-button" type="event" :title="editorText('tools')"><font-awesome-icon :icon="icons.tools"/></GeneralButton>
         <template #menu><div class="document-tools-menu">
           <GeneralButton type="event" @click="saveDraft"><font-awesome-icon :icon="icons.save"/><span>{{editorText('saveDraft')}}</span></GeneralButton>
@@ -772,7 +772,8 @@ section {
   --vscode-editorCodeLens-fontSize: 12px;
   --vscode-editorCodeLens-fontFeatureSettings: "liga" off, "calt" off;
 }
-.editor-statusbar { border-top: 1px solid #dfe1e2; color: var(--light-text-color, var(--text-color, #212529)); gap: 1rem; justify-content: flex-end; min-height: 1.8rem; font-size: .8rem; font-family: monospace; }
+.editor-statusbar { border-top: 1px solid #dfe1e2; color: var(--light-text-color, var(--text-color, #212529)); justify-content: flex-end; min-height: 1.8rem; font-size: .8rem; font-family: monospace; }
+.editor-statusbar .toolbar-divider { height: 15px; margin: 0 .55rem; }
 .muted { color: #6c757d; }
 .is-expanded {
   height: 100vh;
