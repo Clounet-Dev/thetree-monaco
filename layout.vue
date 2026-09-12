@@ -13,7 +13,7 @@
               <label for="editor-color">{{editorText('fontColor')}}</label>
               <div class="color-field"><InputField id="editor-color" v-model="color" type="color" class="color-picker-input"/><InputField v-model="color" type="text" class="color-text-input"/></div>
               <br><CheckBox v-model="darkColorEnabled">{{editorText('darkColor')}}</CheckBox>
-              <div class="color-field"><InputField id="editor-dark-color" v-model="darkColor" type="color" class="color-picker-input" :disabled="!darkColorEnabled"/><InputField v-model="darkColor" type="text" class="color-text-input" :disabled="!darkColorEnabled"/></div>
+              <div :key="darkColorEnabled" class="color-field"><InputField id="editor-dark-color" v-model="darkColor" type="color" class="color-picker-input" :disabled="!darkColorEnabled"/><InputField v-model="darkColor" type="text" class="color-text-input" :disabled="!darkColorEnabled"/></div>
               <div class="insert-actions"><GeneralButton submit type="event" @click="insertColor">{{editorText('insert')}}</GeneralButton></div>
             </div>
           </template>
@@ -417,7 +417,13 @@ export default {
       return text.replace(/\{(\w+)\}/g, (_, name) => values[name] ?? `{${name}}`)
     },
     handleKeydown(event) {
-      if(event.key === 'F11') {
+      if(event.ctrlKey && event.key.toLowerCase() === 's') {
+        event.preventDefault()
+        this.saveDraft()
+      } else if(event.ctrlKey && event.key.toLowerCase() === 'o') {
+        event.preventDefault()
+        this.loadDraft()
+      } else if(event.key === 'F11') {
         event.preventDefault()
         this.toggleExpanded()
       } else if(event.key === 'Escape' && this.isExpanded) {
