@@ -5,11 +5,11 @@
         <GeneralButton class="toolbar-button" type="event" :title="editorText('undo')" @click="editor?.trigger('toolbar', 'undo')"><font-awesome-icon :icon="icons.undo"/></GeneralButton>
         <GeneralButton class="toolbar-button" type="event" :title="editorText('redo')" @click="editor?.trigger('toolbar', 'redo')"><font-awesome-icon :icon="icons.redo"/></GeneralButton>
         <div class="toolbar-divider"/>
-        <GeneralButton class="toolbar-button" type="event" :title="editorText('findReplace')" @click="editor?.trigger('toolbar', 'actions.findWithSelection')"><font-awesome-icon :icon="icons.search"/></GeneralButton>
+        <GeneralButton class="toolbar-button" type="event" :title="editorText('findReplace')" @click="editor?.trigger('toolbar', 'actions.find')"><font-awesome-icon :icon="icons.search"/></GeneralButton>
         <div class="toolbar-divider"/>
         <ContextMenu ref="colorMenu" :title="editorText('fontSize')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
           <GeneralButton class="toolbar-button" type="event" :title="editorText('fontSize')"><font-awesome-icon :icon="icons.fontSize"/><font-awesome-icon class="toolbar-caret" :icon="icons.caretDown"/></GeneralButton>
-            <template #menu><div><GeneralButton v-for="item in fontSizes" :key="item.value" type="event" class="font-size-option" @click="applyFormat('size', item.value)"><span>{{editorText(item.key)}}</span><span class="font-size-preview" :class="`font-size-preview--${item.value.replace('-', 'minus')}`">Aa</span></GeneralButton></div></template>
+            <template #menu><div><GeneralButton v-for="item in fontSizes" :key="item.value" type="event" class="font-size-option" @click="applyFontSize(item.value)"><span>{{editorText(item.key)}}</span><span class="font-size-preview" :class="`font-size-preview--${item.value.replace('-', 'minus')}`">Aa</span></GeneralButton></div></template>
         </ContextMenu>
         <ContextMenu :title="editorText('fontColor')" :popperClass="['context-menu', 'max-size', 'editor-context-menu', { 'theseed-dark-mode-context-menu': theme === 'vs-dark' }]">
           <GeneralButton class="toolbar-button" type="event" :title="editorText('fontColor')"><font-awesome-icon :icon="icons.palette"/></GeneralButton>
@@ -59,8 +59,10 @@
           <template #menu>
             <div class="macro-menu">
               <label for="editor-macro-type">{{editorText('macroType')}}</label>
-              <SelectMenu id="editor-macro-type" v-model="macro.type"><option v-for="item in macroTypes" :key="item.value" :value="item.value">{{editorText(item.key)}}</option></SelectMenu>
-              <InputField v-model="macro.value" type="text" :placeholder="editorText('Search') || '검색'"/>
+              <InputField id="editor-macro-type" v-model="macro.type" type="text" list="macro-suggestions" :placeholder="editorText('macroType')" autocomplete="off"/>
+              <datalist id="macro-suggestions"><option v-for="item in macroTypes" :key="item.value" :value="item.value">{{editorText(item.key)}}</option></datalist>
+              <br>
+              <InputField v-model="macro.value" type="text" :placeholder="editorText('content') || '내용'"/>
               <div class="insert-actions"><GeneralButton submit type="event" @click="insertMacro">{{editorText('insert')}}</GeneralButton></div>
             </div>
           </template>
@@ -70,11 +72,10 @@
           <template #menu>
             <div class="language-menu">
               <label for="editor-language">{{editorText('language')}}</label>
-              <SelectMenu id="editor-language" v-model="language">
-                <option value="">{{editorText('syntaxLanguage')}}</option>
-                <option v-for="item in filteredLanguages" :key="item.value" :value="item.value">{{item.value}} / {{item.label}}</option>
-              </SelectMenu>
-              <InputField v-model="languageSearch" type="text" :placeholder="editorText('Search') || '검색'" />
+              <InputField id="editor-language" v-model="language" type="text" list="language-suggestions" :placeholder="editorText('search') || '검색'" autocomplete="off" />
+              <datalist id="language-suggestions">
+                <option v-for="item in languages" :key="item.value" :value="item.value">{{item.value}} / {{item.label}}</option>
+              </datalist>
               <div class="insert-actions"><GeneralButton submit type="event" @click="insertCodeBlock">{{editorText('insert')}}</GeneralButton></div>
             </div>
           </template>
@@ -99,12 +100,11 @@
           <template #menu>
             <div class="insert-menu image-menu">
               <label>{{editorText('fileName')}}</label>
-              <InputField ref="imageName" v-model="image.name" type="text" required :hasError="imageNameError" list="image-file-suggestions" @update:modelValue="imageNameError = false"/>
-              <datalist id="image-file-suggestions"><option v-for="extension in imageExtensions" :key="extension" :value="extension"/></datalist>
+              <InputField ref="imageName" v-model="image.name" type="text" :hasError="imageNameError" @update:modelValue="imageNameError = false"/>
               <div class="field-grid">
                 <CheckBox class="menu-check" v-model="image.widthEnabled">{{editorText('width')}}</CheckBox>
                 <CheckBox class="menu-check" v-model="image.heightEnabled">{{editorText('height')}}</CheckBox>
-                <InputField v-model="image.width" type="text" :disabled="!image.widthEnabled"/>
+                <div class="unit-field"><InputField v-model="image.width" type="text" :disabled="!image.widthEnabled"/><SelectMenu v-model="image.widthUnit" :disabled="!image.widthEnabled"><option value="px">px</option><option value="%">%</option></SelectMenu></div>
                 <div class="unit-field"><InputField v-model="image.height" type="text" :disabled="!image.heightEnabled"/><SelectMenu v-model="image.heightUnit" :disabled="!image.heightEnabled"><option value="px">px</option><option value="%">%</option></SelectMenu></div>
               </div>
               <div class="field-grid">
@@ -310,12 +310,18 @@ export default {
       compareMode: false,
       diffEditor: null,
       fontSize: '1',
-        fontSizes: [
-          { value: '-2', key: 'smaller2' },
-          { value: '-1', key: 'smaller1' },
-          { value: '1', key: 'larger1' },
-          { value: '2', key: 'larger2' }
-        ],
+      fontSizes: [
+        { value: '-5', key: 'smaller5' },
+        { value: '-4', key: 'smaller4' },
+        { value: '-3', key: 'smaller3' },
+        { value: '-2', key: 'smaller2' },
+        { value: '-1', key: 'smaller1' },
+        { value: '1', key: 'larger1' },
+        { value: '2', key: 'larger2' },
+        { value: '3', key: 'larger3' },
+        { value: '4', key: 'larger4' },
+        { value: '5', key: 'larger5' }
+      ],
       color: '#000000',
       darkColor: '#ffffff',
       darkColorEnabled: false,
@@ -336,6 +342,7 @@ export default {
         name: '',
         width: '',
         height: '',
+        widthUnit: 'px',
         heightUnit: 'px',
         align: '',
         fit: '',
@@ -364,7 +371,6 @@ export default {
         heightEnabled: false
       },
       language: '',
-      languageSearch: '',
       macro: {
         type: 'include',
         value: ''
@@ -418,11 +424,6 @@ export default {
   computed: {
     theme() {
       return this.$store.state.currentTheme === 'dark' ? 'vs-dark' : 'vs'
-    },
-    filteredLanguages() {
-      if (!this.languageSearch) return this.languages
-      const q = this.languageSearch.toLowerCase()
-      return this.languages.filter(item => item.value.toLowerCase().includes(q) || item.label.toLowerCase().includes(q))
     }
   },
   watch: {
@@ -510,7 +511,17 @@ export default {
         this.loadDraft()
       } else if(event.ctrlKey && event.key.toLowerCase() === 'f') {
         event.preventDefault()
-        this.editor?.trigger('keyboard', 'actions.findWithSelection')
+        this.editor?.trigger('keyboard', 'actions.find')
+      } else if(event.ctrlKey && event.key.toLowerCase() === 'z') {
+        event.preventDefault()
+        if(event.shiftKey) {
+          this.editor?.trigger('keyboard', 'redo')
+        } else {
+          this.editor?.trigger('keyboard', 'undo')
+        }
+      } else if(event.ctrlKey && event.key.toLowerCase() === 'y') {
+        event.preventDefault()
+        this.editor?.trigger('keyboard', 'redo')
       } else if(event.key === 'F11') {
         event.preventDefault()
         this.toggleExpanded()
@@ -576,6 +587,10 @@ export default {
       this.quickaccess.apply(descriptor)
       this.updateStatus()
     },
+    applyFontSize(value) {
+      this.applyFormat('size', value)
+      hideAllPoppers()
+    },
     insertColor() {
       this.applyFormat('color', { color: this.color, darkColor: this.darkColorEnabled ? this.darkColor : null })
       hideAllPoppers()
@@ -629,7 +644,7 @@ export default {
       const text = this.getSelectedText()
       const plain = text
         .replace(/('{2,3}|~~|__|,,|\^\^|\{\{\{|\}\}\})/g, '')
-        .replace(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, '$2')
+        .replace(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (match, p1, p2) => p2 || p1)
         .replace(/\[\*\s*([^\]]+)\]/g, '$1')
       this.editor.executeEdits('clear-formatting', [{ range: selection, text: plain }])
     },
@@ -666,11 +681,12 @@ export default {
     insertImage() {
       if(!this.image.name.trim()) {
         this.imageNameError = true
-        this.$refs.imageName?.focus()
+        this.showToast(this.editorText('fileRequired') || '파일 문서명을 입력해 주세요.')
+        this.$refs.imageName?.$el?.querySelector('input')?.focus() || this.$refs.imageName?.focus()
         return
       }
       const attributes = [
-        this.image.widthEnabled && this.image.width && `width=${this.image.width}`,
+        this.image.widthEnabled && this.image.width && `width=${this.image.width}${this.image.widthUnit === '%' ? '%' : ''}`,
         this.image.heightEnabled && this.image.height && `height=${this.image.height}${this.image.heightUnit === '%' ? '%' : ''}`,
         this.image.alignEnabled && this.image.align && `align=${this.image.align}`,
         this.image.fitEnabled && this.image.fit && `object-fit=${this.image.fit}`,
@@ -775,9 +791,28 @@ export default {
         this.showToast(this.editorText('noDraft'))
         return
       }
-      const selected = window.prompt(this.editorText('draftSelect'), history.map((item, index) => `${index + 1}. ${new Date(item.time).toLocaleString(this.currentLocale())}`).join('\n'))
-      const index = Number(selected) - 1
-      if(Number.isInteger(index) && history[index]) this.setValue(history[index].value)
+      const promptMsg = this.currentLanguage() === 'en' 
+        ? 'Enter the draft number to load.\n(To delete, enter -number. e.g., -1)'
+        : '불러올 임시 저장의 번호를 입력하세요.\n(삭제하려면 -번호를 입력하세요. 예: -1)'
+      const selected = window.prompt(promptMsg + '\n\n' + history.map((item, index) => `${index + 1}. ${new Date(item.time).toLocaleString(this.currentLocale())}`).join('\n'))
+      
+      if (!selected) {
+        hideAllPoppers()
+        return
+      }
+      
+      const num = Number(selected)
+      if (num < 0) {
+        const index = Math.abs(num) - 1
+        if (Number.isInteger(index) && history[index]) {
+          history.splice(index, 1)
+          localStorage.setItem(`${this.getDraftKey()}:history`, JSON.stringify(history))
+          this.showToast(this.currentLanguage() === 'en' ? 'Draft deleted.' : '임시 저장이 삭제되었습니다.')
+        }
+      } else {
+        const index = num - 1
+        if (Number.isInteger(index) && history[index]) this.setValue(history[index].value)
+      }
       hideAllPoppers()
     },
     loadDraft() {
@@ -832,8 +867,12 @@ export default {
         const range = new this.monaco.Range(startLine, 1, endLine, model.getLineMaxColumn(endLine))
         const lines = []
         for(let line = startLine; line <= endLine; line++) {
-          const content = model.getLineContent(line).replace(/^=+\s*|\s*=+$/g, '').trim()
-          lines.push(`${'='.repeat(level)} ${content || `${level}단계`} ${'='.repeat(level)}`)
+          let content = model.getLineContent(line).replace(/^=+\s*|\s*=+$/g, '').trim()
+          if (/^[1-6]단계$/.test(content) || /^Level [1-6]$/.test(content)) {
+            content = ''
+          }
+          const defaultText = this.editorText('headingLevel', { level })
+          lines.push(`${'='.repeat(level)} ${content || defaultText} ${'='.repeat(level)}`)
         }
         return { range, text: lines.join('\n') }
       })
@@ -1106,7 +1145,7 @@ section {
   width: 100%;
 }
 :global(.editor-context-menu .heading-option),
-:global(.editor-context-menu .font-size-option) {
+:global(.editor-context-menu .font-size-option){
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
@@ -1136,10 +1175,16 @@ section {
   color: #777;
   padding-left: .75rem;
 }
+:global(.editor-context-menu .font-size-preview--minus5) { font-size: .5rem; }
+:global(.editor-context-menu .font-size-preview--minus4) { font-size: .6rem; }
+:global(.editor-context-menu .font-size-preview--minus3) { font-size: .7rem; }
 :global(.editor-context-menu .font-size-preview--minus2) { font-size: .8rem; }
 :global(.editor-context-menu .font-size-preview--minus1) { font-size: .9rem; }
 :global(.editor-context-menu .font-size-preview--1) { font-size: 1.1rem; }
 :global(.editor-context-menu .font-size-preview--2) { font-size: 1.2rem; }
+:global(.editor-context-menu .font-size-preview--3) { font-size: 1.3rem; }
+:global(.editor-context-menu .font-size-preview--4) { font-size: 1.4rem; }
+:global(.editor-context-menu .font-size-preview--5) { font-size: 1.5rem; }
 :global(.editor-context-menu .color-field) {
   display: flex;
 }
@@ -1222,7 +1267,6 @@ section {
 }
 :global(.editor-context-menu .video-menu ul) {
   margin: .15rem 0 0;
-  padding-left: 1.2rem;
 }
 :global(.editor-context-menu .image-menu .input[type=color]) {
   min-height: 1.95rem;
