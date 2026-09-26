@@ -188,7 +188,7 @@
 <script>
 import { h, markRaw, nextTick } from 'vue'
 import { hideAllPoppers } from 'floating-vue'
-import GeneralButton from '@/components/GeneralButton'
+import GeneralButton from '@/components/generalButton'
 import ContextMenu from '@/components/contextMenu'
 import InputField from '@/components/form/inputField'
 import SelectMenu from '@/components/selectMenu'
