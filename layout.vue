@@ -582,7 +582,7 @@ export default {
           }
         }
       }[name] || { bracket: { open: '', close: '' } }
-      if(name === 'size') descriptor.bracket = { open: `{{{+${value} `, close: '}}}' }
+      if(name === 'size') descriptor.bracket = { open: `{{{${String(value).startsWith('-') ? '' : '+'}${value} `, close: '}}}' }
       if(name === 'color') descriptor.bracket = { open: `{{{#${value.color.replace('#', '')}${value.darkColor ? `,#${value.darkColor.replace('#', '')}` : ''} `, close: '}}}' }
       this.quickaccess.apply(descriptor)
       this.updateStatus()
@@ -644,7 +644,7 @@ export default {
       const text = this.getSelectedText()
       const plain = text
         .replace(/('{2,3}|~~|__|,,|\^\^|\{\{\{|\}\}\})/g, '')
-        .replace(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (match, p1, p2) => p2 || p1)
+        .replace(/\[\[([^\vert{}\]]+)(?:\Vert{}([^\]]+))?\]\]/g, (match, p1, p2) => p2 || p1)
         .replace(/\[\*\s*([^\]]+)\]/g, '$1')
       this.editor.executeEdits('clear-formatting', [{ range: selection, text: plain }])
     },
